@@ -1,0 +1,3 @@
+This is a double-entry bookkeeping program inspired by ledger(https://github.com/jwiegley/ledger)
+
+I've been using ledger for years but recently finding it's hard to do some statistics. The document is not so understandable to me. So that's why I'm making another program myself.
