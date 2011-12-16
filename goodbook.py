@@ -7,8 +7,6 @@ import time
 from decimal import *
 import collections
 
-from transaction import *
-
 class Transaction:
   def __init__(self):
     self.date = None
@@ -159,16 +157,52 @@ class Ledger:
     return account_balances
 
   def print_balance(self, balances):
-    sorted_by_name = list(balances.iteritems())
-    sorted_by_name.sort(lambda a, b: cmp(a[0], b[0]))
-    ret = ''
-    for account in sorted_by_name:
-      account_name, currencies = account
-      ret += account_name
-      for currency in currencies:
-        ret += ' ' + currency + str(currencies[currency])
-      ret += '\n'
-    print ret
+    hierarchy = {}
+    for account_str in balances:
+      current_node = hierarchy
+      account_balance = balances[account_str]
+      account_str = account_str.decode('utf8')
+      account = re.search(u'(.*?)[:：]', account_str, re.U)
+
+      while account:
+        account_name = account.group(1)
+        if account_name not in current_node:
+          current_node[account_name] = {'balance': {}, 'children': {}}
+        for currency in account_balance:
+          if currency not in current_node[account_name]['balance']:
+            current_node[account_name]['balance'][currency] = Decimal(0)
+          current_node[account_name]['balance'][currency] += account_balance[currency]
+        current_node = current_node[account_name]['children']
+        account_str = account_str[account.end(0):]
+        account = re.search(u'(.*?)[:：]', account_str, re.U)
+
+      if account_str:
+        if account_str not in current_node:
+          current_node[account_str] = {'balance': {}, 'children': {}}
+        for currency in account_balance:
+          if currency not in current_node[account_str]['balance']:
+            current_node[account_str]['balance'][currency] = Decimal(0)
+          current_node[account_str]['balance'][currency] += account_balance[currency]
+
+    self.print_balance_hierarchy(hierarchy)
+
+  @staticmethod
+  def _sort_by_currency(a, b):
+    try:
+      return cmp(a[1]['balance']['￥'], b[1]['balance']['￥'])
+    except KeyError:
+      return 0
+
+  def print_balance_hierarchy(self, hierarchy, indent = 0, sort_currency = '￥'):
+    sorted_balance = sorted(list(hierarchy.iteritems()), self._sort_by_currency)
+    for account in sorted_balance:
+      name, info = account
+      print ' ' * 4 * indent + name,
+      for currency in info['balance']:
+        print ' ' + currency + str(info['balance'][currency]),
+      print
+      if info['children']:
+        self.print_balance_hierarchy(info['children'], indent + 1, sort_currency)
 
   def print_monthly_account_balance(self):
     for month in sorted(self.month_transactions.keys()):
