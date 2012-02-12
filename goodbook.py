@@ -187,20 +187,27 @@ class Ledger:
     self.print_balance_hierarchy(hierarchy)
 
   @staticmethod
-  def _sort_by_currency(a, b):
-    try:
-      return cmp(a[1]['balance']['￥'], b[1]['balance']['￥'])
-    except KeyError:
-      return 0
+  def _sum_currency(account):
+    factor = {
+      '￥': 1,
+      '$': 6.4,
+    }
+    total = 0.0
+    for currency in account[1]['balance']:
+      total += float(account[1]['balance'][currency]) * factor[currency]
+    return abs(total)
 
   def print_balance_hierarchy(self, hierarchy, indent = 0, sort_currency = '￥'):
-    sorted_balance = sorted(list(hierarchy.iteritems()), self._sort_by_currency)
+    sorted_balance = sorted(list(hierarchy.iteritems()),
+      key = self._sum_currency, reverse = True)
     for account in sorted_balance:
       name, info = account
-      print ' ' * 4 * indent + name,
+      s = ''
       for currency in info['balance']:
-        print ' ' + currency + str(info['balance'][currency]),
-      print
+        if info['balance'][currency] != 0:
+          s += ' ' + currency + str(info['balance'][currency])
+      if s:
+        print ' ' * 4 * indent + name, s
       if info['children']:
         self.print_balance_hierarchy(info['children'], indent + 1, sort_currency)
 
