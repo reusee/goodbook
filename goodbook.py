@@ -213,7 +213,7 @@ class Ledger:
 
   def print_monthly_account_balance(self):
     for month in sorted(self.month_transactions.keys()):
-      print month
+      print month.center(50, '-')
       balance = self.calculate_balance(self.month_transactions[month])
       self.print_balance(balance)
 
@@ -239,6 +239,8 @@ def main():
       ledger.print_monthly_account_balance()
     elif commands[0].startswith('p'): # print transaction
       ledger.print_transactions()
+    elif commands[0].startswith('stat'):
+      ledger.print_transactions(_account_and_amount)
   else:
     ledger.print_balance(ledger.account_balances)
 
